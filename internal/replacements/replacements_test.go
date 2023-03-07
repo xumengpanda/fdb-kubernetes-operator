@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"k8s.io/utils/pointer"
 
@@ -41,6 +42,7 @@ import (
 var _ = Describe("replace_misconfigured_pods", func() {
 	var cluster *fdbv1beta2.FoundationDBCluster
 	var log logr.Logger
+	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
 
 	BeforeEach(func() {
 		log = logf.Log.WithName("replacements")
