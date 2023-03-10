@@ -535,7 +535,7 @@ func (processGroupStatus *ProcessGroupStatus) addCondition(oldProcessGroups []*P
 	if oldProcessGroupStatus != nil {
 		for _, condition := range oldProcessGroupStatus.ProcessGroupConditions {
 			if condition.ProcessGroupConditionType == conditionType {
-				// We found a condition with the above condition type
+				// Existing ProcessGroupStatus has the same condition, we keep the condition's original start time
 				processGroupStatus.ProcessGroupConditions = append(processGroupStatus.ProcessGroupConditions, condition)
 				return
 			}
@@ -698,6 +698,8 @@ const (
 	PodPending ProcessGroupConditionType = "PodPending"
 	// ReadyCondition is currently only used in the metrics.
 	ReadyCondition ProcessGroupConditionType = "Ready"
+	// NodeTainted represents a pod that runs on a tainted node
+	NodeTainted ProcessGroupConditionType = "NodeTainted"
 )
 
 // AllProcessGroupConditionTypes returns all ProcessGroupConditionType

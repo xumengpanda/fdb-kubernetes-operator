@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/FoundationDB/fdb-kubernetes-operator/internal/locality"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/FoundationDB/fdb-kubernetes-operator/pkg/podmanager"
 	"github.com/go-logr/logr"
@@ -366,6 +367,10 @@ func checkAndSetProcessStatus(r *FoundationDBClusterReconciler, cluster *fdbv1be
 		return nil
 	}
 
+	// TODO: Update tainted state
+	node := &corev1.Node{}
+	err = r.Get(ctx, client.ObjectKey{Name: "fancy-node"}, node)
+
 	correct := false
 	versionCompatibleUpgrade := cluster.VersionCompatibleUpgradeInProgress()
 	for _, process := range processStatus {
@@ -390,7 +395,8 @@ func checkAndSetProcessStatus(r *FoundationDBClusterReconciler, cluster *fdbv1be
 		correct = commandLine == process.CommandLine && versionMatch && !cluster.Spec.Buggify.EmptyMonitorConf
 
 		if !correct {
-			log.Info("IncorrectProcess", "expected", commandLine, "got", process.CommandLine, "expectedVersion", cluster.Spec.Version, "version", process.Version, "processGroupID", processGroupStatus.ProcessGroupID)
+			log.Info("IncorrectProcess", "expected", commandLine, "got", process.CommandLine, "expectedVersion", cluster.Spec.Version,
+				"version", process.Version, "processGroupID", processGroupStatus.ProcessGroupID, " cluster spec EmptyMonitorConf is ", cluster.Spec.Buggify.EmptyMonitorConf)
 		}
 	}
 
@@ -401,6 +407,7 @@ func checkAndSetProcessStatus(r *FoundationDBClusterReconciler, cluster *fdbv1be
 	return nil
 }
 
+// Validate and set progressGroup's status
 func validateProcessGroups(ctx context.Context, r *FoundationDBClusterReconciler, cluster *fdbv1beta2.FoundationDBCluster, status *fdbv1beta2.FoundationDBClusterStatus, processMap map[fdbv1beta2.ProcessGroupID][]fdbv1beta2.FoundationDBStatusProcessInfo, configMap *corev1.ConfigMap, pods []*corev1.Pod, pvcs *corev1.PersistentVolumeClaimList) ([]*fdbv1beta2.ProcessGroupStatus, error) {
 	var err error
 	processGroups := status.ProcessGroups
@@ -612,6 +619,21 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 	processGroupStatus.UpdateCondition(fdbv1beta2.PodFailing, failing, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
 	processGroupStatus.UpdateCondition(fdbv1beta2.PodPending, false, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
 
+	// Update taint status
+	node := &corev1.Node{}
+	err = r.Get(ctx, client.ObjectKey{Namespace: cluster.Namespace, Name: pod.Spec.NodeName}, node)
+	if err != nil {
+		return err
+	}
+	tainted := len(node.Spec.Taints != 0)
+	// TODO: check taint key matches user's input
+	// Example: taints key should match cluster.spec.taints spec
+	//   taints:
+	//   - effect: NoSchedule
+	//   key: key1
+	//   value: value1
+	processGroupStatus.UpdateCondition(fdbv1beta2.NodeTainted, tainted, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
+
 	return nil
 }
 
@@ -650,6 +672,12 @@ func removeDuplicateConditions(status fdbv1beta2.FoundationDBClusterStatus) {
 	}
 }
 
+// Update tainted pod's status
+func detectTaintedNode(ctx context.Context, r *FoundationDBClusterReconciler, cluster *fdbv1beta2.FoundationDBCluster, status *fdbv1beta2.FoundationDBClusterStatus) ([]*corev1.Pod, *corev1.PersistentVolumeClaimList, error) {
+
+}
+
+// TODO: MX: update taint info for pod
 func refreshProcessGroupStatus(ctx context.Context, r *FoundationDBClusterReconciler, cluster *fdbv1beta2.FoundationDBCluster, status *fdbv1beta2.FoundationDBClusterStatus) ([]*corev1.Pod, *corev1.PersistentVolumeClaimList, error) {
 	status.ProcessGroups = make([]*fdbv1beta2.ProcessGroupStatus, 0, len(cluster.Status.ProcessGroups))
 	for _, processGroup := range cluster.Status.ProcessGroups {
