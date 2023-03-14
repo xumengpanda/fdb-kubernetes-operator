@@ -53,7 +53,7 @@ var _ = Describe("replace_misconfigured_pods", func() {
 		cluster.Spec.LabelConfig.FilterOnOwnerReferences = pointer.Bool(false)
 	})
 
-	When("checking process groups fro replacements", func() {
+	When("checking process groups for replacements", func() {
 		var pod *corev1.Pod
 		var status *fdbv1beta2.ProcessGroupStatus
 		var pClass fdbv1beta2.ProcessClass
@@ -596,6 +596,56 @@ var _ = Describe("replace_misconfigured_pods", func() {
 						Expect(needsRemoval).To(BeFalse())
 						Expect(err).NotTo(HaveOccurred())
 					})
+				})
+			})
+		})
+
+		Context("when Node is tainted", func() {
+			BeforeEach(func() {
+				pClass = fdbv1beta2.ProcessClassLog
+				remove = false
+				// Define cluster's taint policy
+				taintKey1 := "*"
+				taintKey1Duration := 5
+				taintKey2 := "example/maintenance"
+				taintKey2Duration := 10
+				cluster.Spec.AutomationOptions.Replacements.TaintReplacementOptions = []fdbv1beta2.TaintReplacementOption{
+					{
+						Key:               &taintKey1,
+						DurationInSeconds: &taintKey1Duration,
+					},
+					{
+						Key:               &taintKey2,
+						DurationInSeconds: &taintKey2Duration,
+					},
+				}
+				// TODO: taint the node
+			})
+
+			When("taint duration is not long enough", func() {
+				It("should not need a replacement", func() {
+					// pod.ObjectMeta.Annotations[fdbv1beta2.LastSpecKey] = "-1"
+					// cluster.Spec.AutomationOptions.PodUpdateStrategy = fdbv1beta2.PodUpdateStrategyTransactionReplacement
+					// needsRemoval, err := processGroupNeedsRemoval(cluster, pod, status, log)
+					// Expect(needsRemoval).To(BeTrue())
+					// Expect(err).NotTo(HaveOccurred())
+				})
+			})
+		})
+		Context("when Node is not tainted", func() {
+			BeforeEach(func() {
+				pClass = fdbv1beta2.ProcessClassLog
+				remove = false
+				// TODO: taint the node
+			})
+
+			When("should not mark any pod tainted", func() {
+				It("should not need a replacement", func() {
+					// pod.ObjectMeta.Annotations[fdbv1beta2.LastSpecKey] = "-1"
+					// cluster.Spec.AutomationOptions.PodUpdateStrategy = fdbv1beta2.PodUpdateStrategyTransactionReplacement
+					// needsRemoval, err := processGroupNeedsRemoval(cluster, pod, status, log)
+					// Expect(needsRemoval).To(BeTrue())
+					// Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})

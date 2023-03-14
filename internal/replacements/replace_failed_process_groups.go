@@ -82,6 +82,7 @@ ProcessGroupLoop:
 			}
 		}
 
+		// TODO: Check replacement
 		needsReplacement, missingTime := processGroupStatus.NeedsReplacement(cluster.GetFailureDetectionTimeSeconds())
 		if !needsReplacement {
 			continue

@@ -42,6 +42,7 @@ import (
 
 var testenv env.Environment
 
+// TODO: use kind to test
 func TestMain(m *testing.M) {
 	testenv = env.New()
 

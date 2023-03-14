@@ -126,7 +126,6 @@ func (r *FoundationDBClusterReconciler) Reconcile(ctx context.Context, request c
 
 	subReconcilers := []clusterSubReconciler{
 		updateStatus{},
-		updateTaintStatus{},
 		updateLockConfiguration{},
 		updateConfigMap{},
 		checkClientCompatibility{},

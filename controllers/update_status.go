@@ -367,10 +367,6 @@ func checkAndSetProcessStatus(r *FoundationDBClusterReconciler, cluster *fdbv1be
 		return nil
 	}
 
-	// TODO: Update tainted state
-	node := &corev1.Node{}
-	err = r.Get(ctx, client.ObjectKey{Name: "fancy-node"}, node)
-
 	correct := false
 	versionCompatibleUpgrade := cluster.VersionCompatibleUpgradeInProgress()
 	for _, process := range processStatus {
@@ -625,14 +621,35 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 	if err != nil {
 		return err
 	}
-	tainted := len(node.Spec.Taints != 0)
-	// TODO: check taint key matches user's input
-	// Example: taints key should match cluster.spec.taints spec
-	//   taints:
-	//   - effect: NoSchedule
-	//   key: key1
-	//   value: value1
-	processGroupStatus.UpdateCondition(fdbv1beta2.NodeTainted, tainted, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
+	// Check the tainted duration and only mark the process group tainted after the configured tainted duration
+	// Future: Do not replace Pod that tolerates a taint
+	hasValidTaint := false
+	for _, taint := range node.Spec.Taints {
+		for _, taintConfiguredKey := range cluster.Spec.AutomationOptions.Replacements.TaintReplacementOptions {
+			if *taintConfiguredKey.DurationInSeconds < 0 {
+				logger.Info("TaintReplacementOption is disabled", "Key", taintConfiguredKey.Key, "DurationInSeconds", taintConfiguredKey.DurationInSeconds)
+				continue
+			}
+			if taint.Key == *taintConfiguredKey.Key || *taintConfiguredKey.Key == "*" {
+				hasValidTaint = true
+				processGroupStatus.UpdateCondition(fdbv1beta2.NodeTaintDetected, true, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
+				for _, processGroupCondition := range processGroupStatus.ProcessGroupConditions {
+					if processGroupCondition.ProcessGroupConditionType == fdbv1beta2.NodeTaintDetected &&
+						time.Unix(processGroupCondition.Timestamp, 0).Add(time.Duration(*taintConfiguredKey.DurationInSeconds)).Before(time.Now()) {
+						processGroupStatus.UpdateCondition(fdbv1beta2.NodeTaintReplacing, true, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
+						logger.Info("Replacing tainted Pod", "Pod", pod.Name, "Node", node.Name,
+							"TaintKey", taint.Key, "TaintDetectedTime", processGroupCondition.Timestamp,
+							"TaintValue", taint.Value, "TaintEffect", taint.Effect)
+					}
+				}
+			}
+		}
+	}
+	if !hasValidTaint {
+		// Remove taint condition if the pod is no longer on a tainted node;
+		// This is needed especially when a node's status is flapping
+		processGroupStatus.UpdateCondition(fdbv1beta2.NodeTaintDetected, false, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
+	}
 
 	return nil
 }
@@ -670,11 +687,6 @@ func removeDuplicateConditions(status fdbv1beta2.FoundationDBClusterStatus) {
 
 		processGroupStatus.ProcessGroupConditions = conditions
 	}
-}
-
-// Update tainted pod's status
-func detectTaintedNode(ctx context.Context, r *FoundationDBClusterReconciler, cluster *fdbv1beta2.FoundationDBCluster, status *fdbv1beta2.FoundationDBClusterStatus) ([]*corev1.Pod, *corev1.PersistentVolumeClaimList, error) {
-
 }
 
 // TODO: MX: update taint info for pod

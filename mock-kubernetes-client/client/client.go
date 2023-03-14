@@ -76,6 +76,7 @@ func NewMockClientWithHooks(scheme *runtime.Scheme, createHooks []func(ctx conte
 	}
 
 	podCreateHook := func(_ context.Context, client *MockClient, object ctrlClient.Object) error {
+		// Q: what's the scope of the variable pod? Global accessible?
 		pod, isPod := object.(*corev1.Pod)
 		if !isPod {
 			return nil
@@ -92,10 +93,21 @@ func NewMockClientWithHooks(scheme *runtime.Scheme, createHooks []func(ctx conte
 		return nil
 	}
 
+	nodeCreateHook := func(_ context.Context, client *MockClient, object ctrlClient.Object) error {
+		// TODO: Creat the node object
+		node, isNode := object.(*corev1.Node)
+		if !isNode {
+			fmt.Printf("Created node name:%s\n", node.Name)
+			return nil
+		}
+
+		return nil
+	}
+
 	return &MockClient{
 		fakeClient:  fake.NewClientBuilder().WithScheme(scheme).Build(),
 		scheme:      scheme,
-		createHooks: append(createHooks, serviceCreateHook, podCreateHook),
+		createHooks: append(createHooks, serviceCreateHook, podCreateHook, nodeCreateHook),
 		updateHooks: updateHooks,
 	}
 }

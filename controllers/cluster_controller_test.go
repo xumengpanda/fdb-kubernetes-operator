@@ -57,6 +57,8 @@ import (
 var firstLogIndex = 1
 var firstStorageIndex = 13
 
+// TODO: This unit test is most interesting because it has reconcile
+
 func reloadCluster(cluster *fdbv1beta2.FoundationDBCluster) (int64, error) {
 	generations, err := reloadClusterGenerations(cluster)
 	if generations.HasPendingRemoval > 0 {
