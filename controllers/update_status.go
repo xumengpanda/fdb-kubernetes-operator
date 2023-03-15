@@ -617,6 +617,7 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 
 	// Update taint status
 	node := &corev1.Node{}
+	// Q: the Get() will fail in unit test if we don't explicitly create node?
 	err = r.Get(ctx, client.ObjectKey{Namespace: cluster.Namespace, Name: pod.Spec.NodeName}, node)
 	if err != nil {
 		return err

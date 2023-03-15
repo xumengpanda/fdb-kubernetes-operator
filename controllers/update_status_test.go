@@ -22,8 +22,10 @@ package controllers
 
 import (
 	"context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"fmt"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/FoundationDB/fdb-kubernetes-operator/pkg/fdbadminclient/mock"
 
@@ -69,6 +71,7 @@ var _ = Describe("update_status", func() {
 			configMap = &corev1.ConfigMap{}
 			err = k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Name + "-config"}, configMap)
 			Expect(err).NotTo(HaveOccurred())
+
 		})
 
 		JustBeforeEach(func() {
@@ -90,6 +93,15 @@ var _ = Describe("update_status", func() {
 			allPvcs = &corev1.PersistentVolumeClaimList{}
 			err = clusterReconciler.List(context.TODO(), allPvcs, internal.GetPodListOptions(cluster, "", "")...)
 			Expect(err).NotTo(HaveOccurred())
+		})
+
+		When("process group's node is tainted", func() {
+			It("should get NodeTaintDetected condition", func() {
+				fmt.Printf("pods:%d, allPods:%d, pods[0].name:%s, pods[0].nodeName\n", len(pods), len(allPods), pods[0].Name, pods[0].Spec.NodeName)
+
+				err := validateProcessGroup(context.TODO(), clusterReconciler, cluster, nil, nil, "", processGroupStatus)
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 
 		When("process group has no Pod", func() {
@@ -475,6 +487,7 @@ var _ = Describe("update_status", func() {
 			err = k8sClient.Create(context.TODO(), cluster)
 			Expect(err).NotTo(HaveOccurred())
 
+			// TODO: check log for reconcileCluster(). how is this function working in unit test?
 			result, err := reconcileCluster(cluster)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Requeue).To(BeFalse())

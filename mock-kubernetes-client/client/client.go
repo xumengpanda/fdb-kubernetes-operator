@@ -90,19 +90,22 @@ func NewMockClientWithHooks(scheme *runtime.Scheme, createHooks []func(ctx conte
 			pod.Status.Phase = corev1.PodRunning
 		}
 
-		return nil
-	}
-
-	nodeCreateHook := func(_ context.Context, client *MockClient, object ctrlClient.Object) error {
-		// TODO: Creat the node object
-		node, isNode := object.(*corev1.Node)
-		if !isNode {
-			fmt.Printf("Created node name:%s\n", node.Name)
-			return nil
-		}
+		node := *&corev1.Node{}
+		node.Name = fmt.Sprintf("%s-node", pod.Name)
+		pod.Spec.NodeName = node.Name
 
 		return nil
 	}
+
+	// nodeCreateHook := func(_ context.Context, client *MockClient, object ctrlClient.Object) error {
+	// 	node, isNode := object.(*corev1.Node)
+	// 	if !isNode {
+	// 		fmt.Printf("Created node name:%s\n", node.Name)
+	// 		return nil
+	// 	}
+
+	// 	return nil
+	// }
 
 	return &MockClient{
 		fakeClient:  fake.NewClientBuilder().WithScheme(scheme).Build(),
