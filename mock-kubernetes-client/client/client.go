@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // MockClient provides a mock Kubernetes client.
@@ -43,6 +44,12 @@ type MockClient struct {
 
 	// ipCounter provides monotonically incrementing IP addresses.
 	ipCounter int
+
+	// podCounter provides monotonically increasing pod index, which construct pod name as pod-${podIndexCounter}
+	podIndexCounter int
+
+	// nodeCounter provides monotonically increasing node index, which construct pod name as node-${nodeIndexCounter}
+	nodeIndexCounter int
 
 	// scheme will be used to initialize or reset the new fake client
 	scheme *runtime.Scheme
@@ -90,19 +97,22 @@ func NewMockClientWithHooks(scheme *runtime.Scheme, createHooks []func(ctx conte
 			pod.Status.Phase = corev1.PodRunning
 		}
 
-		node := *&corev1.Node{}
-		node.Name = fmt.Sprintf("%s-node", pod.Name)
+		node := corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-node", pod.Name)},
+		}
 		pod.Spec.NodeName = node.Name
 
-		return nil
+		log.Log.Info("MX Debug Fake client create pod and node", "Pod name", pod.Name, "Node name", node.Name)
+		return client.Create(context.Background(), &node)
 	}
 
 	// nodeCreateHook := func(_ context.Context, client *MockClient, object ctrlClient.Object) error {
 	// 	node, isNode := object.(*corev1.Node)
 	// 	if !isNode {
-	// 		fmt.Printf("Created node name:%s\n", node.Name)
+	// 		fmt.Printf("Created node hook failed\n")
 	// 		return nil
 	// 	}
+	// 	fmt.Printf("Created node name:%s\n", node.Name)
 
 	// 	return nil
 	// }
@@ -110,7 +120,7 @@ func NewMockClientWithHooks(scheme *runtime.Scheme, createHooks []func(ctx conte
 	return &MockClient{
 		fakeClient:  fake.NewClientBuilder().WithScheme(scheme).Build(),
 		scheme:      scheme,
-		createHooks: append(createHooks, serviceCreateHook, podCreateHook, nodeCreateHook),
+		createHooks: append(createHooks, serviceCreateHook, podCreateHook),
 		updateHooks: updateHooks,
 	}
 }

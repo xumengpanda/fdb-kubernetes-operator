@@ -54,6 +54,7 @@ var _ = Describe("replace_failed_process_groups", func() {
 		Expect(generation).To(Equal(int64(1)))
 	})
 
+	// TODO: Test replace for taint info
 	JustBeforeEach(func() {
 		adminClient, err := mock.NewMockAdminClientUncast(cluster, k8sClient)
 		Expect(err).NotTo(HaveOccurred())

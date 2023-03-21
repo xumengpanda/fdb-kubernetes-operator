@@ -160,6 +160,7 @@ func reconcileObject(reconciler reconcile.Reconciler, metadata metav1.ObjectMeta
 }
 
 func setupClusterForTest(cluster *fdbv1beta2.FoundationDBCluster) error {
+	// Q: how does this create calls podCreateHook()? What's the control flow?
 	err := k8sClient.Create(context.TODO(), cluster)
 	if err != nil {
 		return err

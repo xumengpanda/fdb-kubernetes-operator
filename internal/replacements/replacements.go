@@ -143,6 +143,7 @@ func processGroupNeedsRemoval(cluster *fdbv1beta2.FoundationDBCluster, pod *core
 
 	logger := log.WithValues("namespace", cluster.Namespace, "cluster", cluster.Name, "processGroupID", processGroupID, "reconciler", "replaceMisconfiguredProcessGroups")
 
+	//logger.Info("MX Test Msg", "Loc", "processGroupNeedsRemoval", "Pod Name", pod.Name)
 	if processGroupStatus == nil {
 		return false, fmt.Errorf("unknown process group %s in replace_misconfigured_pods", processGroupID)
 	}
@@ -233,6 +234,7 @@ func processGroupNeedsRemoval(cluster *fdbv1beta2.FoundationDBCluster, pod *core
 			return true, nil
 		}
 	}
+	// TODO: check pod's taint status and replace  the pod if necessary
 
 	return false, nil
 }

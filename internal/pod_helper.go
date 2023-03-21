@@ -235,6 +235,7 @@ func CreatePodMap(cluster *fdbv1beta2.FoundationDBCluster, pods []*corev1.Pod) m
 			continue
 		}
 		podProcessGroupMap[processGroupID] = pod
+		//fmt.Printf("MX Debug Info CreatePodMap: Index%d ProcessGroupID:%s\n", index, processGroupID)
 	}
 
 	return podProcessGroupMap
