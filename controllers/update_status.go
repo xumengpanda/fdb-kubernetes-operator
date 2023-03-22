@@ -559,6 +559,8 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 
 	incorrectPod := !metadataMatches(pod.ObjectMeta, internal.GetPodMetadata(cluster, processGroupStatus.ProcessClass, processGroupStatus.ProcessGroupID, specHash))
 	if !incorrectPod {
+		log.Info("MX Debug Pod medatadata does not match", "CurrentMetadata", pod.ObjectMeta,
+			"DesiredMetadata", internal.GetPodMetadata(cluster, processGroupStatus.ProcessClass, processGroupStatus.ProcessGroupID, specHash))
 		updated, err := r.PodLifecycleManager.PodIsUpdated(ctx, r, cluster, pod)
 		if err != nil {
 			return err
@@ -631,10 +633,10 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 		// Check the tainted duration and only mark the process group tainted after the configured tainted duration
 		// Future: Do not replace Pod that tolerates a taint
 		hasValidTaint := false
-		logger.Info("MX Debug Taint", "Pod", pod.Name, "Node", node.Name, "Taints length", len(node.Spec.Taints), "Taints", node.Spec.Taints)
+		//logger.Info("MX Debug Taint Info in update_status", "Pod", pod.Name, "Node", node.Name, "Taints length", len(node.Spec.Taints), "Taints", node.Spec.Taints)
 		for _, taint := range node.Spec.Taints {
 			for _, taintConfiguredKey := range cluster.Spec.AutomationOptions.Replacements.TaintReplacementOptions {
-				logger.Info("MX Debug Taint", "TaintedKey", taintConfiguredKey, "Pod", pod.Name, "Node", node.Name)
+				logger.Info("MX Debug Taint", "TaintedKey", taintConfiguredKey, "DurationInSeconds", taintConfiguredKey.DurationInSeconds, "Pod", pod.Name, "Node", node.Name)
 				if *taintConfiguredKey.DurationInSeconds < 0 {
 					logger.Info("TaintReplacementOption is disabled", "Key", taintConfiguredKey.Key, "DurationInSeconds", taintConfiguredKey.DurationInSeconds)
 					continue
@@ -645,11 +647,15 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 					processGroupStatus.UpdateCondition(fdbv1beta2.NodeTaintDetected, true, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
 					for _, processGroupCondition := range processGroupStatus.ProcessGroupConditions {
 						if processGroupCondition.ProcessGroupConditionType == fdbv1beta2.NodeTaintDetected &&
-							time.Unix(processGroupCondition.Timestamp, 0).Add(time.Duration(*taintConfiguredKey.DurationInSeconds)).Before(time.Now()) {
+							time.Now().Unix()-processGroupCondition.Timestamp > *taintConfiguredKey.DurationInSeconds {
 							processGroupStatus.UpdateCondition(fdbv1beta2.NodeTaintReplacing, true, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
 							logger.Info("Replacing tainted Pod", "Pod", pod.Name, "Node", node.Name,
 								"TaintKey", taint.Key, "TaintDetectedTime", processGroupCondition.Timestamp,
-								"TaintValue", taint.Value, "TaintEffect", taint.Effect)
+								"TaintDuration", int64(time.Since(time.Unix(processGroupCondition.Timestamp, 0))),
+								"TaintValue", taint.Value, "TaintEffect", taint.Effect,
+								"ConditionTimestamp", time.Unix(processGroupCondition.Timestamp, 0),
+								"Duration", time.Duration(*taintConfiguredKey.DurationInSeconds),
+								"Now", time.Now())
 						}
 					}
 				}

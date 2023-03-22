@@ -532,21 +532,21 @@ func (processGroupStatus *ProcessGroupStatus) addCondition(oldProcessGroups []*P
 		break
 	}
 
-	// Check if we got a condition for the condition type for the ProcessGroupStatus
-	if oldProcessGroupStatus != nil {
-		for _, condition := range oldProcessGroupStatus.ProcessGroupConditions {
-			if condition.ProcessGroupConditionType == conditionType {
-				// Existing ProcessGroupStatus has the same condition, we keep the condition's original start time
-				processGroupStatus.ProcessGroupConditions = append(processGroupStatus.ProcessGroupConditions, condition)
-				return
-			}
-		}
-	}
-
 	// Check if we already got this condition in the current ProcessGroupStatus
 	for _, condition := range processGroupStatus.ProcessGroupConditions {
 		if condition.ProcessGroupConditionType == conditionType {
 			return
+		}
+	}
+
+	// Check if we got a condition for the condition type for the ProcessGroupStatus
+	if oldProcessGroupStatus != nil {
+		for _, condition := range oldProcessGroupStatus.ProcessGroupConditions {
+			if condition.ProcessGroupConditionType == conditionType {
+				// Attention: if processGroupStatus already has the conditionType, it will add another instance of the same conditionType
+				processGroupStatus.ProcessGroupConditions = append(processGroupStatus.ProcessGroupConditions, condition)
+				return
+			}
 		}
 	}
 
@@ -953,7 +953,7 @@ type TaintReplacementOption struct {
 	Key *string `json:"key,omitempty"`
 
 	// The tainted key must be present for DurationInSeconds before operator replaces pods on the node with this taint
-	DurationInSeconds *int `json:"durationInSeconds,omitempty"`
+	DurationInSeconds *int64 `json:"durationInSeconds,omitempty"`
 }
 
 // AutomaticReplacementOptions controls options for automatically replacing
@@ -1006,9 +1006,11 @@ func (cluster *FoundationDBCluster) GetProcessSettings(processClass ProcessClass
 	if present {
 		entries = append(entries, entry)
 	}
-
+	fmt.Printf("GetProcessSettings: ProcessClass:%s Entry:%s Present:%t\n", processClass, entry, present)
+	fmt.Printf("GetProcessSettings merged: %+v\n", merged)
 	entries = append(entries, cluster.Spec.Processes[ProcessClassGeneral])
 	for _, entry := range entries {
+		fmt.Printf("\tEntry %+v\n", entry)
 		if merged.PodTemplate == nil {
 			merged.PodTemplate = entry.PodTemplate
 		}

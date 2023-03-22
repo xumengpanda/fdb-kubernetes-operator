@@ -635,9 +635,9 @@ var _ = Describe("replace_misconfigured_pods", func() {
 				remove = false
 				// Define cluster's taint policy
 				taintKey1 := "*"
-				taintKey1Duration := 5
+				taintKey1Duration := int64(5)
 				taintKey2 := "example/maintenance"
-				taintKey2Duration := 10
+				taintKey2Duration := int64(10)
 				cluster.Spec.AutomationOptions.Replacements.TaintReplacementOptions = []fdbv1beta2.TaintReplacementOption{
 					{
 						Key:               &taintKey1,

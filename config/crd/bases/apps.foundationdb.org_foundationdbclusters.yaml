@@ -9923,6 +9923,7 @@ spec:
                         items:
                           properties:
                             durationInSeconds:
+                              format: int64
                               type: integer
                             key:
                               type: string

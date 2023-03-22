@@ -42,8 +42,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = FDescribe("update_status", func() {
-	Context("validate process group on taint node", func() {
+var _ = Describe("update_status", func() {
+	FContext("validate process group on taint node", func() {
 		var cluster *fdbv1beta2.FoundationDBCluster
 		var configMap *corev1.ConfigMap
 		var adminClient *mock.AdminClient
@@ -62,9 +62,9 @@ var _ = FDescribe("update_status", func() {
 			Expect(err).NotTo(HaveOccurred())
 			// Define cluster's taint policy
 			taintKey1 := "*"
-			taintKey1Duration := 5
+			taintKey1Duration := int64(5)
 			taintKey2 := "example/maintenance"
-			taintKey2Duration := 10
+			taintKey2Duration := int64(10)
 			cluster.Spec.AutomationOptions.Replacements.TaintReplacementOptions = []fdbv1beta2.TaintReplacementOption{
 				{
 					Key:               &taintKey1,
@@ -143,13 +143,14 @@ var _ = FDescribe("update_status", func() {
 
 		When("process group's node is tainted", func() {
 			It("should get NodeTaintDetected condition", func() {
+				fmt.Printf("--------------------------Taint test START-------------------------\n")
 				fmt.Printf("Pods:%d, allPods:%d, pods[0].name:%s, pods[0].nodeName:%s\n", len(pods), len(allPods), pods[0].Name, pods[0].Spec.NodeName)
-				processGroupStatus := cluster.Status.ProcessGroups[0]
+				processGroupStatus := fdbv1beta2.FindProcessGroupByID(cluster.Status.ProcessGroups, internal.GetProcessGroupIDFromMeta(cluster, pod.ObjectMeta))
 				fmt.Printf("ProcessGroup:%s Status condition length: %d\n", processGroupStatus.ProcessGroupID, len(processGroupStatus.ProcessGroupConditions))
 				// for index, process := range cluster.Spec.Processes {
 				// 	fmt.Printf("Cluster process settings: Index:%s ProcessSetting %s\n", index, process)
 				// }
-				err := validateProcessGroup(context.TODO(), clusterReconciler, cluster, allPods[0], nil, allPods[0].ObjectMeta.Annotations[fdbv1beta2.LastConfigMapKey], processGroupStatus)
+				err := validateProcessGroup(context.TODO(), clusterReconciler, cluster, pod, nil, pod.ObjectMeta.Annotations[fdbv1beta2.LastConfigMapKey], processGroupStatus)
 
 				log.Info("MX Test Info", "ProcessGroupConditions length", len(processGroupStatus.ProcessGroupConditions))
 				for i, condition := range processGroupStatus.ProcessGroupConditions {
@@ -158,6 +159,7 @@ var _ = FDescribe("update_status", func() {
 
 				Expect(len(processGroupStatus.ProcessGroupConditions)).To(Equal(1))
 				Expect(err).NotTo(HaveOccurred())
+				fmt.Printf("--------------------------Taint test COMPLETE-------------------------\n")
 			})
 		})
 	})

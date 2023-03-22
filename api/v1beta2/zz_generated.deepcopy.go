@@ -1677,7 +1677,7 @@ func (in *TaintReplacementOption) DeepCopyInto(out *TaintReplacementOption) {
 	}
 	if in.DurationInSeconds != nil {
 		in, out := &in.DurationInSeconds, &out.DurationInSeconds
-		*out = new(int)
+		*out = new(int64)
 		**out = **in
 	}
 }

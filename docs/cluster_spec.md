@@ -458,7 +458,7 @@ TaintReplacementOption defines the taint key and taint duration the operator wil
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
 | key | Tainted key | *string | false |
-| durationInSeconds | The tainted key must be present for DurationInSeconds before operator replaces pods on the node with this taint | *int | false |
+| durationInSeconds | The tainted key must be present for DurationInSeconds before operator replaces pods on the node with this taint | *int64 | false |
 
 [Back to TOC](#table-of-contents)
 
