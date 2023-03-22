@@ -55,6 +55,7 @@ var _ = Describe("update_status", func() {
 		var taint bool
 		var pod *corev1.Pod // Pod to be tainted
 		var node *corev1.Node
+		var pvc *corev1.PersistentVolumeClaim // pod's pvc
 
 		BeforeEach(func() {
 			cluster = internal.CreateDefaultCluster()
@@ -150,7 +151,13 @@ var _ = Describe("update_status", func() {
 				// for index, process := range cluster.Spec.Processes {
 				// 	fmt.Printf("Cluster process settings: Index:%s ProcessSetting %s\n", index, process)
 				// }
-				err := validateProcessGroup(context.TODO(), clusterReconciler, cluster, pod, nil, pod.ObjectMeta.Annotations[fdbv1beta2.LastConfigMapKey], processGroupStatus)
+
+				pvcMap := internal.CreatePVCMap(cluster, allPvcs)
+				pvcValue, pvcExists := pvcMap[processGroupStatus.ProcessGroupID]
+				if pvcExists {
+					pvc = &pvcValue
+				}
+				err := validateProcessGroup(context.TODO(), clusterReconciler, cluster, pod, pvc, pod.ObjectMeta.Annotations[fdbv1beta2.LastConfigMapKey], processGroupStatus)
 
 				log.Info("MX Test Info", "ProcessGroupConditions length", len(processGroupStatus.ProcessGroupConditions))
 				for i, condition := range processGroupStatus.ProcessGroupConditions {
