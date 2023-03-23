@@ -517,6 +517,15 @@ func (processGroupStatus *ProcessGroupStatus) UpdateCondition(conditionType Proc
 	}
 }
 
+func (processGroupStatus *ProcessGroupStatus) UpdateConditionTime(conditionType ProcessGroupConditionType, newTime int64) {
+	for _, condition := range processGroupStatus.ProcessGroupConditions {
+		if condition.ProcessGroupConditionType == conditionType {
+			condition.Timestamp = newTime
+			break
+		}
+	}
+}
+
 // addCondition will add the condition to the ProcessGroupStatus.
 // If the old ProcessGroupStatus already contains the condition the condition is reused to contain the same timestamp.
 func (processGroupStatus *ProcessGroupStatus) addCondition(oldProcessGroups []*ProcessGroupStatus, processGroupID ProcessGroupID, conditionType ProcessGroupConditionType) {
@@ -1006,11 +1015,11 @@ func (cluster *FoundationDBCluster) GetProcessSettings(processClass ProcessClass
 	if present {
 		entries = append(entries, entry)
 	}
-	fmt.Printf("GetProcessSettings: ProcessClass:%s Entry:%s Present:%t\n", processClass, entry, present)
-	fmt.Printf("GetProcessSettings merged: %+v\n", merged)
+	// fmt.Printf("GetProcessSettings: ProcessClass:%s Entry:%s Present:%t\n", processClass, entry, present)
+	// fmt.Printf("GetProcessSettings merged: %+v\n", merged)
 	entries = append(entries, cluster.Spec.Processes[ProcessClassGeneral])
 	for _, entry := range entries {
-		fmt.Printf("\tEntry %+v\n", entry)
+		// fmt.Printf("\tEntry %+v\n", entry)
 		if merged.PodTemplate == nil {
 			merged.PodTemplate = entry.PodTemplate
 		}
