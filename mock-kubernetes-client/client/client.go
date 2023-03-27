@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // MockClient provides a mock Kubernetes client.
@@ -102,7 +101,7 @@ func NewMockClientWithHooks(scheme *runtime.Scheme, createHooks []func(ctx conte
 		}
 		pod.Spec.NodeName = node.Name
 
-		log.Log.Info("MX Debug Fake client create pod and node", "Pod name", pod.Name, "Node name", node.Name)
+		// log.Log.Info("MX Debug Fake client create pod and node", "Pod name", pod.Name, "Node name", node.Name)
 		return client.Create(context.Background(), &node)
 	}
 

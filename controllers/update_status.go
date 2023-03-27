@@ -647,8 +647,9 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 					logger.Info("MX Debug Info UpdateTaint", "Pod", pod.Name, "Add Condition", "NodeTaintDetected")
 					processGroupStatus.UpdateCondition(fdbv1beta2.NodeTaintDetected, true, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
 					// Use node taint's timestamp as NodeTaintDetected condition's starting time
-					if taint.TimeAdded != nil && taint.TimeAdded.Time.Before(time.Now()) {
-						logger.Info("MX Debug Info Update NodeTaintDetected Time", "Pod", pod.Name, "NewTime", taint.TimeAdded.Unix())
+					if taint.TimeAdded != nil && taint.TimeAdded.Time.Unix() < *processGroupStatus.GetConditionTime(fdbv1beta2.NodeTaintDetected) {
+						// TODO: print out condition time
+						logger.Info("MX Debug Info Update NodeTaintDetected Time", "Pod", pod.Name, "OriginalTime", processGroupStatus.GetConditionTime(fdbv1beta2.NodeTaintDetected), "NewTime", taint.TimeAdded.Unix())
 						processGroupStatus.UpdateConditionTime(fdbv1beta2.NodeTaintDetected, taint.TimeAdded.Unix())
 					}
 					for _, processGroupCondition := range processGroupStatus.ProcessGroupConditions {
@@ -658,7 +659,7 @@ func validateProcessGroup(ctx context.Context, r *FoundationDBClusterReconciler,
 						if processGroupCondition.ProcessGroupConditionType == fdbv1beta2.NodeTaintDetected &&
 							time.Now().Unix()-processGroupCondition.Timestamp > *taintConfiguredKey.DurationInSeconds {
 							processGroupStatus.UpdateCondition(fdbv1beta2.NodeTaintReplacing, true, cluster.Status.ProcessGroups, processGroupStatus.ProcessGroupID)
-							logger.Info("Replacing tainted Pod", "Pod", pod.Name, "Node", node.Name,
+							logger.Info("Add NodeTaintReplacing condition", "Pod", pod.Name, "Node", node.Name,
 								"TaintKey", taint.Key, "TaintDetectedTime", processGroupCondition.Timestamp,
 								"TaintDuration", int64(time.Since(time.Unix(processGroupCondition.Timestamp, 0))),
 								"TaintValue", taint.Value, "TaintEffect", taint.Effect,

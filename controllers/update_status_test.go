@@ -43,7 +43,7 @@ import (
 )
 
 var _ = Describe("update_status", func() {
-	FContext("validate process group on taint node", func() {
+	PContext("validate process group on taint node", func() {
 		var cluster *fdbv1beta2.FoundationDBCluster
 		var configMap *corev1.ConfigMap
 		var adminClient *mock.AdminClient

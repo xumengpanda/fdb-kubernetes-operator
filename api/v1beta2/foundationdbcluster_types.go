@@ -363,6 +363,9 @@ func (processGroupStatus *ProcessGroupStatus) NeedsReplacement(failureTime int) 
 	var missingTime *int64
 	for _, condition := range conditionsThatNeedReplacement {
 		conditionTime := processGroupStatus.GetConditionTime(condition)
+		// if condition == NodeTaintReplacing {
+		// 	fmt.Printf("\t---processGroupStatus's Condition:%+v\n", processGroupStatus.GetCondition(condition))
+		// }
 		if conditionTime != nil && (missingTime == nil || *missingTime > *conditionTime) {
 			missingTime = conditionTime
 		}
@@ -518,9 +521,9 @@ func (processGroupStatus *ProcessGroupStatus) UpdateCondition(conditionType Proc
 }
 
 func (processGroupStatus *ProcessGroupStatus) UpdateConditionTime(conditionType ProcessGroupConditionType, newTime int64) {
-	for _, condition := range processGroupStatus.ProcessGroupConditions {
+	for i, condition := range processGroupStatus.ProcessGroupConditions {
 		if condition.ProcessGroupConditionType == conditionType {
-			condition.Timestamp = newTime
+			processGroupStatus.ProcessGroupConditions[i].Timestamp = newTime
 			break
 		}
 	}
@@ -656,6 +659,16 @@ func (processGroupStatus *ProcessGroupStatus) GetConditionTime(conditionType Pro
 	for _, condition := range processGroupStatus.ProcessGroupConditions {
 		if condition.ProcessGroupConditionType == conditionType {
 			return &condition.Timestamp
+		}
+	}
+
+	return nil
+}
+
+func (processGroupStatus *ProcessGroupStatus) GetCondition(conditionType ProcessGroupConditionType) *ProcessGroupCondition {
+	for _, condition := range processGroupStatus.ProcessGroupConditions {
+		if condition.ProcessGroupConditionType == conditionType {
+			return condition
 		}
 	}
 

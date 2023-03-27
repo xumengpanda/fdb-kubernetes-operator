@@ -67,6 +67,7 @@ func ReplaceFailedProcessGroups(log logr.Logger, cluster *fdbv1beta2.FoundationD
 
 ProcessGroupLoop:
 	for _, processGroupStatus := range cluster.Status.ProcessGroups {
+		// log.Info("MX Debug INFO: ReplaceFailedProcessGroups", "ProcessGroup", processGroupStatus.ProcessGroupID, "ProcessGroupStatus", processGroupStatus)
 		// If a process group is already marked for removal we can skip it here.
 		if processGroupStatus.IsMarkedForRemoval() {
 			continue
@@ -84,6 +85,9 @@ ProcessGroupLoop:
 
 		// TODO: Check replacement
 		needsReplacement, missingTime := processGroupStatus.NeedsReplacement(cluster.GetFailureDetectionTimeSeconds())
+		log.Info("MX Debug INFO: ReplaceFailedProcessGroups", "ProcessGroup", processGroupStatus.ProcessGroupID,
+			"ProcessGroupStatus", processGroupStatus, "needsReplacement", needsReplacement,
+			"missingTime", missingTime, "ClusterFailureDetectionTime", cluster.GetFailureDetectionTimeSeconds())
 		if !needsReplacement {
 			continue
 		}
