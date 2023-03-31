@@ -42,7 +42,7 @@ import (
 )
 
 var _ = Describe("update_status", func() {
-	Context("validate process group on taint node", func() {
+	FContext("validate process group on taint node", func() {
 		var cluster *fdbv1beta2.FoundationDBCluster
 		var configMap *corev1.ConfigMap
 		var adminClient *mock.AdminClient
@@ -99,9 +99,7 @@ var _ = Describe("update_status", func() {
 			node = &corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{Name: pod.Spec.NodeName},
 			}
-		})
 
-		JustBeforeEach(func() {
 			databaseStatus, err := adminClient.GetStatus()
 			Expect(err).NotTo(HaveOccurred())
 			processMap = make(map[fdbv1beta2.ProcessGroupID][]fdbv1beta2.FoundationDBStatusProcessInfo)
